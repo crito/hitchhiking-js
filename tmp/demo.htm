@@ -1,0 +1,383 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+		<html xmlns="http://www.w3.org/1999/xhtml"
+		  <head>
+		    <title>River Studies - alpha #10/8/17 - Danube/Budapest/East Bank</title>
+			<meta http-equiv="content-type" content="text/html; charset=UTF-8" />		    
+		    <meta http-equiv='imagetoolbar' content='no'/>
+		    <style type="text/css"> 
+		        html, body { overflow: hidden; padding: 0px; margin:0px; 
+					font-family: Arial, Helvetica, Verdana,sans-serif;
+					font-size:10px;}
+		        body { background: #fff; }
+				
+		        #river { height: 95%; width:95%; border: 0px solid #888; padding:0px; border:0px solid #000;margin-bottom:14px }
+		        #real_map {position:absolute; bottom:5px; left:33.3%;; width:33.3%; height:33.3%; border: 1px solid #000;z-index:2000;opacity : 0.6;filter: alpha(opacity=60);}
+		        
+		        
+		        #title {position:absolute;top:10px;left:5px;z-index:2000;font-size:14pt;font-weight:bold;font-family: Georgia;opacity : 0.8;filter: alpha(opacity=80);}
+		        #info { position:absolute;top:45px;left:5px;font-family:Arial;font-size:10px;z-index:2001;opacity : 0.8;filter: alpha(opacity=80);}
+
+		        #log_left { position:absolute;bottom:5px;left:5px;font-family:Arial;font-size:9px;z-index:2001;opacity : 0.8;filter: alpha(opacity=80);}
+		        #log_right { position:absolute;bottom:5px;right:5px;font-family:Arial;font-size:9px;z-index:2001;opacity : 0.8;filter: alpha(opacity=80);}
+		        #date_right { position:absolute;bottom:25px;right:5px;font-family:Arial;font-size:9px;z-index:2001;opacity : 0.8;filter: alpha(opacity=80);}
+		        #date_left { position:absolute;bottom:25px;left:5px;font-family:Arial;font-size:9px;z-index:2001;opacity : 0.8;filter: alpha(opacity=80);}
+		        #log_center { position:absolute;bottom:5px;left:45%;font-family:Arial;font-size:9px;z-index:2003;width:10%;text-align:center;opacity : 0.8;filter: alpha(opacity=80);}
+
+		        #debug { display:none;position:absolute;bottom:90px;right:5px;font-family:Arial;font-size:9px;z-index:2000;opacity : 0.8;filter: alpha(opacity=80);}
+
+		        #controls {position:absolute;right:80px;top:10px;z-index:2003;opacity : 0.8;filter: alpha(opacity=80);}
+				#map_button {position:absolute; bottom:5px; left:33.3%;z-index:2003;opacity : 0.8;filter: alpha(opacity=80);}
+		        #zoomin{margin-left:50px}
+		        
+		        #footer{position:absolute;top:90px;left:0px;color:#eeeeee;
+					z-index:2003;padding:2px 5px 2px 8px;height:14px}
+				#footer a{color:#eeeeee;text-decoration:none}
+				#footer a:hover{color:#ffffff;text-decoration:underline}
+		        
+		        .overlay {background:#111111;color:#eeeeee;padding:3px;}
+		        .button {background:#111111;color:#eeeeee;padding:2px 4px 3px 4px;font-size:12px;text-transform:uppercase;font-weight:bold;border:1px solid #000;height:12px;}
+		        .button:hover {background:white;color:#111;border:1px solid #000;cursor:pointer}
+
+		        .olControlMousePosition {margin-bottom:46px;z-index:2004;right:5px;bottom:30px;display:none}
+		        
+		    </style>
+		    <script src="js/OpenLayers.js" type="text/javascript"></script>
+			<script src="js/mapstraction.js"></script>		    
+		    <!--<script src="http://openlayers.org/api/OpenLayers.js" type="text/javascript"></script>-->
+			<!--<script src="http://mapstraction.googlecode.com/svn/trunk/source/mxn.js?(openlayers)" type="text/javascript" charset="utf-8" ></script>-->
+			<!--<script src="http://www.mapstraction.com/mapstraction-js/mapstraction.js"></script>-->
+		    <script src="js/jquery-latest.js" type="text/javascript"></script>
+			<script src="js/jquery.csv.js" type="text/javascript"></script>
+			
+		    
+		    <script type="text/javascript">
+		        var river;
+			    var autopan;
+			    var mapstraction;
+			    var cur_track;
+			    var my_poly;
+			    var my_marker;
+			    var logdata;
+
+		        // avoid pink tiles
+		        OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
+		        OpenLayers.Util.onImageLoadErrorColor = "transparent";
+		        
+			function initialize_realmap(lat,lon) {
+				
+				// mapstraction
+				mapstraction = new mxn.Mapstraction('real_map','openlayers');
+				if (mapstraction) {
+					mapstraction.setCenterAndZoom(new mxn.LatLonPoint(lat,lon), 13);
+					mapstraction.addControls({
+						pan: false,
+						zoom: false,
+						map_type: false,
+						overview: false,
+						scale: false,
+					});
+				}
+
+				//openlayers
+				/*
+				realmap = new OpenLayers.Map("real_map");
+				var mapnik = new OpenLayers.Layer.OSM();
+				realmap.addLayer(mapnik);
+				realmap.setCenter(new OpenLayers.LonLat(16,48.52) // Center of the map
+					.transform(
+						new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+						new OpenLayers.Projection("EPSG:900913") // to Spherical Mercator Projection
+					), 13 // Zoom level
+				);
+				*/
+			}
+			
+
+			function update_real_map(lat, lon) {
+
+				x = Math.round(river.getCenter().lon * 1.08);
+				l =  Math.max( Math.round(river.getExtent().toArray()[0] * 1.08), 1);
+				r =  Math.min( Math.round(river.getExtent().toArray()[2] * 1.08), parseFloat(logdata.length-1));							
+
+				// mapstraction			
+				if (mapstraction)
+					mapstraction.setCenter(new mxn.LatLonPoint(lat,lon));
+				
+				// openlayers
+				/*
+				realmap.setCenter(new OpenLayers.LonLat(lon,lat) // Center of the map
+					.transform(
+						new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+						new OpenLayers.Projection("EPSG:900913") // to Spherical Mercator Projection
+					), realmap.getZoom() // Zoom level
+				);*/
+
+				
+				var points = new Array();
+				var markers = new Array();
+
+				// add polyline of current track
+				mapstraction.removeAllPolylines();
+				
+				for(var i = l; i < r ; i++) {
+					points.push(new mxn.LatLonPoint( parseFloat(logdata[i][3]), parseFloat(logdata[i][4]) ));
+				}
+								
+				cur_track = new mxn.Polyline(points);
+				cur_track.setWidth(3);
+				cur_track.setColor("#ffff00");
+				cur_track.setOpacity(0.7);
+				mapstraction.addPolyline(cur_track);				
+				mapstraction.polylineCenterAndZoom(0.25);
+
+				// heading marker
+				mapstraction.removeAllMarkers();
+				var myPoint = new mxn.LatLonPoint(parseFloat(logdata[r][3]),parseFloat(logdata[r][4]));
+				my_marker = new mxn.Marker(myPoint);
+				var d =  Math.round( (parseFloat(logdata[r][8]) / 360.0) * 40) * 3;
+				my_marker.setIcon('mapfiles/dir_' + d + '.png',[24,24],[-12,-12]);  
+				mapstraction.addMarker( my_marker );
+				$("#debug").append("<br /> d= " + d);
+			}
+			
+			function doPan() {				
+				var x = Math.round(river.getCenter().lon);
+				var l = Math.max(Math.round(river.getExtent().toArray()[0]),1);
+				var r = Math.min(Math.round(river.getExtent().toArray()[2]), parseInt(logdata.length-1));
+
+				if ( x >= 590.0)
+					river.panTo( new OpenLayers.LonLat(35,-12.5) );
+				else
+					river.pan(5,0);				
+			}
+
+			function getGPS() {
+				x = Math.round(river.getCenter().lon * 1.08);
+				l_x =  Math.max( Math.round(river.getExtent().toArray()[0] * 1.08), 1);
+				r_x =  Math.min( Math.round(river.getExtent().toArray()[2] * 1.08), parseFloat(logdata.length-1));
+
+				$("#log_left .lat").html(parseFloat(logdata[l_x][3]).toFixed(4));
+				$("#log_left .lon").html(parseFloat(logdata[l_x][4]).toFixed(4));
+				$("#log_left .alt").html(parseFloat(logdata[l_x][5]).toFixed(0));
+				$("#log_left .spd").html(parseFloat(logdata[l_x][6]).toFixed(1));
+				$("#log_left .dist").html( (parseFloat(logdata[l_x][7]) - parseFloat(logdata[1][7]) ).toFixed(2));
+				$("#date_left .date").html( logdata[l_x][1]);
+				$("#log_right .lat").html(parseFloat(logdata[r_x][3]).toFixed(4));
+				$("#log_right .lon").html(parseFloat(logdata[r_x][4]).toFixed(4));
+				$("#log_right .alt").html(parseFloat(logdata[r_x][5]).toFixed(0));
+				$("#log_right .spd").html(parseFloat(logdata[r_x][6]).toFixed(1));
+				$("#log_right .dist").html( (parseFloat(logdata[r_x][7]) - parseFloat(logdata[1][7]) ).toFixed(2));
+				$("#date_right .date").html( logdata[r_x][1]);
+				$("#log_center .dist").html( (parseFloat(logdata[r_x][7]) - parseFloat(logdata[l_x][7]) ).toFixed(2));
+				//$("#log_right .dist").html( (parseFloat(logdata[r_x][7]) - parseFloat(logdata[l_x][7]) ).toFixed(2));				
+				
+				$("#debug").html("l= " + river.getExtent().toArray()[0]);
+				$("#debug").append("<br /> r= " + river.getExtent().toArray()[2]);
+				$("#debug").append("<br /> center= " + river.getCenter().lon);
+				$("#debug").append("<br /> x= " + x);
+				$("#debug").append("<br /> center_lat= " + logdata[x][3]);
+				$("#debug").append("<br /> center_lon= " + logdata[x][4]);
+
+				update_real_map(parseFloat(logdata[x][3]), parseFloat(logdata[x][4]));				
+			}
+			
+		    function init(){
+				
+				var options = {
+					controls: [],
+					maxExtent: new OpenLayers.Bounds(  0.0, -25.0060284543, 600.0, 0.0 ),
+					maxResolution: 3.086569,
+					numZoomLevels: 10
+				};
+				river = new OpenLayers.Map('river', options);
+	
+				var layer = new OpenLayers.Layer.TMS( "TMS Layer","",
+					{  url: '', serviceVersion: '.', layername: '.', alpha: true,
+						type: 'png', getURL: overlay_getTileURL 
+					});
+		        river.addLayer(layer);
+				//river.zoomToExtent( mapBounds );
+				//river.zoomToExtent( new OpenLayers.Bounds( 0.0, -25.0, 60.0, 0.0), false );
+				river.zoomTo( 7 );
+				river.panTo( new OpenLayers.LonLat(35,-12.5) );
+				
+	            
+				river.addControl(new OpenLayers.Control.MousePosition());	            
+				river.addControl(new OpenLayers.Control.KeyboardDefaults());
+				//river.addControl(new OpenLayers.Control.MouseDefaults());
+				//river.addControl(new OpenLayers.Control.PanZoomBar());
+				//river.addControl(new OpenLayers.Control.OverviewMap());
+
+				// get log data
+				jQuery.get("track.csv", function(data) {
+
+					logdata = jQuery.csv(",")(data);
+					last = logdata.length -1;
+					
+					$("#info").append("<br /> TOTAL DISTANCE: "
+						+ ( parseFloat(logdata[last][7]) - parseFloat(logdata[1][7]) ).toFixed(2)
+						+ "km" );
+
+					$("#info").prepend("DATE: "
+						+ logdata[1][1]
+						+ " - "
+						+ logdata[last][1]
+						+ "<br />");
+				});
+
+				// enable autopan
+				autopan = window.setInterval('doPan()', 50);
+				
+	            // enable gps log info
+	            var gpsinfo_interval = window.setInterval('getGPS()', 500);
+
+				// init real map
+	            initialize_realmap(45.0,18.0);				
+	            $("#real_map").hide();
+
+				// button actions
+	            $("#map_button").toggle(
+					function(){
+						$("#real_map").show();
+						$("#map_button").html("hide map");
+					}
+					, function() {
+						$("#real_map").hide();
+						$("#map_button").html("show map");
+				});
+
+	            $("#play").click(
+					function() {
+						if (autopan) {
+							window.clearInterval(autopan);
+							autopan=0;
+						} else {
+							autopan = window.setInterval('doPan()', 50);
+						}
+				});
+
+				$("#forward").click(
+					function(){
+						window.clearInterval(autopan);
+						river.pan(500,0);
+						if (autopan) autopan = window.setInterval('doPan()', 50);
+				});
+
+				$("#back").click(
+					function(){
+						window.clearInterval(autopan);
+						river.pan(-500,0);
+						if (autopan) autopan = window.setInterval('doPan()', 50);
+				});
+
+				$("#zoomin").click(
+					function(){
+						river.zoomIn();
+				});
+				$("#zoomout").click(
+					function(){
+						if (river.getZoom() > 3) river.zoomOut();
+				});													
+	        }
+			
+	        function overlay_getTileURL(bounds) {
+	            var res = this.map.getResolution();
+	            var x = Math.round((bounds.left - this.maxExtent.left) / (res * this.tileSize.w));
+	            var y = Math.round((bounds.bottom - this.maxExtent.bottom) / (res * this.tileSize.h));
+	            var z = this.map.getZoom();
+				if (x >= 0 && y >= 0) {
+		            return this.url + z + "/" + x + "/" + y + "." + this.type;				
+				} else {
+	                return "http://www.maptiler.org/img/none.png";
+				}
+			}
+			
+		   function getWindowHeight() {
+		        if (self.innerHeight) return self.innerHeight;
+		        if (document.documentElement && document.documentElement.clientHeight)
+		            return document.documentElement.clientHeight;
+		        if (document.body) return document.body.clientHeight;
+			        return 0;
+		    }
+
+		    function getWindowWidth() {
+			    if (self.innerWidth) return self.innerWidth;
+			    if (document.documentElement && document.documentElement.clientWidth)
+			        return document.documentElement.clientWidth;
+			    if (document.body) return document.body.clientWidth;
+			        return 0;
+		    }
+
+		    function resize() {  
+			    var river = document.getElementById("river");  
+			    //var header = document.getElementById("header");   
+			    river.style.height = (getWindowHeight()- 0) + "px";
+			    river.style.width = (getWindowWidth()- 0) + "px";
+			    //header.style.width = (getWindowWidth()- 0) + "px";
+				if (river.updateSize) { river.updateSize(); };
+		    } 
+
+		    onresize=function(){ resize(); };
+
+		    </script>
+		  </head>
+		  <body onload="init()">
+			
+			<!-- <div id="subheader">Generated by <a href="http://www.maptiler.org/">MapTiler</a>/<a href="http://www.klokan.cz/projects/gdal2tiles/">GDAL2Tiles</a>, Copyright &copy; 2008 <a href="http://www.klokan.cz/">Klokan Petr Pridal</a>,  <a href="http://www.gdal.org/">GDAL</a> &amp; <a href="http://www.osgeo.org/">OSGeo</a> <a href="http://code.google.com/soc/">GSoC</a> -->
+			<!-- PLEASE, LET THIS NOTE ABOUT AUTHOR AND PROJECT SOMEWHERE ON YOUR WEBSITE, OR AT LEAST IN THE COMMENT IN HTML. THANK YOU -->
+
+			<div id="title">
+				<span class="overlay">River Studies #10/8/17 - Danube/Budapest/East Bank</span>
+			</div>
+
+			<div id="info" class="overlay">
+				CAMERA: NC353L-369-HDD
+			</div>
+						
+		    <div id="river"></div>
+
+			<div id="log_left" class="overlay">
+				LAT=<span class="lat">n/a</span>° 
+				LON=<span class="lon">n/a</span>°
+				<!--ALT=<span class="alt">n/a</span>m-->
+				SPD=<span class="spd">n/a</span> km/h
+				DIST=<span class="dist">n/a</span>km
+			</div>
+			<div id="date_left" class="overlay">
+				TIME=<span class="date">n/a</span>
+			</div>
+			<div id="log_right" class="overlay">
+				LAT=<span class="lat">n/a</span>° 
+				LON=<span class="lon">n/a</span>°
+				<!--ALT=<span class="alt">n/a</span>m-->
+				SPD=<span class="spd">n/a</span> km/h
+				DIST=<span class="dist">n/a</span>km
+			</div>
+			<div id="date_right" class="overlay">
+				TIME=<span class="date">n/a</span>
+			</div>			
+			<div id="log_center" class="overlay">
+				SCREEN-DIST: <span class="dist">n/a</span>km
+			</div>
+			<div id="debug" class="overlay"></div>
+			
+			<div id="gray"></div>
+			<div id="real_map"></div>			
+			
+			<div id="map_button" class="button">show map</div>
+			<div id="controls">
+				<span id="back" class="button" title="rewind">&laquo;</span>
+				<span id="play" class="button" title="play/pause">||</span>
+				<span id="forward" class="button" title="fast forward">&raquo;</span>
+				<span id="zoomin" class="button" title="zoom in">+</span>
+				<span id="zoomout" class="button" title="zoom out">-</span>
+			</div>
+			
+		    <script type="text/javascript" >resize()</script>
+
+		    <!--<div id="footer">
+				&copy 2010, <a href="http://m.ash.to">Michael Aschauer</a> / <a href="http://riverstudies.org">riverstudies.org</a>
+		    </div>-->
+
+		  </body>
+		</html>
