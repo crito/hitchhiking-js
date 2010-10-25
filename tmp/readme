@@ -1,0 +1,84 @@
+Design
+======
+
+The map can is used in two different situations. Attached to an active
+itinerary or to a an archived itinerary.::
+
+   // get positions as json
+   jQuery.getJSON("", function(data) {
+
+                    logdata = jQuery.csv(",")(data);
+                    last = logdata.length -1;
+
+                    $("#info").append("<br /> TOTAL DISTANCE: "
+                        + ( parseFloat(logdata[last][7]) - parseFloat(logdata[1][7]) ).toFixed(2)
+                        + "km" );
+
+                    $("#info").prepend("DATE: "
+                        + logdata[1][1]
+                        + " - "
+                        + logdata[last][1]
+                        + "<br />");
+                });
+ 
+    autopan = window.setInterval('doRenderPolyline()', 50);
+
+    function poly(map) {
+        map.setCenterAndZoom(new mxn.LatLonPoint(37.78,-122.395033836365), 12);
+        // create a polygon object
+        var myPoly = new mxn.Polyline([new
+            mxn.LatLonPoint(37.7945928242851,-122.395033836365), new
+            mxn.LatLonPoint(37.7938467508748,-122.393960952759), new
+            mxn.LatLonPoint(37.7945928242851,-122.39275932312), new
+            mxn.LatLonPoint(37.789505810689,-122.387609481812), new
+            mxn.LatLonPoint(37.7782792282611,-122.387351989746), new
+            mxn.LatLonPoint(37.7768545853105,-122.390570640564), new
+            mxn.LatLonPoint(37.7690524823224,-122.397179603577), new
+            mxn.LatLonPoint(37.7668813159428,-122.394347190857), new
+            mxn.LatLonPoint(37.7658635597592,-122.407650947571), new
+            mxn.LatLonPoint(37.7689167862912,-122.408037185669), new
+            mxn.LatLonPoint(37.7765493011063,-122.417650222778), new
+            mxn.LatLonPoint(37.7945928242851,-122.395033836365)]);
+        map.addPolyline(myPoly);
+    }
+
+    function initializeMap() {
+        var map = new mxn.Mapstraction('map_canvas','openlayers');
+        poly(map);    
+    }
+
+    function doRenderPolyline() {
+        mapstraction.removeAllPolylines();
+        mapstraction.removeAllFilters();
+        mapstraction.addPolyline(centerRadius.getPolyline(mxn.util.milesToKM(radius), '#00F'));
+        mapstraction.addFilter('distance', 'le', radius);
+        var selectedCount = mapstraction.doFilter();
+        var tw = document.getElementById( 'timeWindow' );
+        tw.innerHTML = 'Radius: ' + radius.toFixed(2) + ' Mile(s)<br/>Selected Markers: ' + selectedCount;
+    }
+
+Active Itinerary
+----------------
+
+The current itinerary gets rendered as a poly line. The page makes in a set
+interval an ajax request to request the updated list of positions. The polyline
+gets refreshed without reloading the whole page.
+
+#) Initialize the map.
+
+#) Request gps position.
+#) Render polyline.
+#) Center map to last gps location or to the south pole if not existing.
+#) Repeat steps
+
+Archived Itinerary
+------------------
+
+#) Initialize the map.
+
+#) Request all gps locations.
+#) Parse json answer.
+#) Render layer with polyline.
+#) Render Marker
+#) Render layer with movable/click able marker (track timeline)
+
