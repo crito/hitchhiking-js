@@ -8,12 +8,14 @@
 // Create the global symbol "hike" if it doesn't exist.
 // Throw an error if it does exist but is not an object
 var hike;
-if (!hike) hike = {};
-else if (typeof hike != object)
+if (!hike) { hike = {}; }
+else if (typeof hike != object) {
     throw new Error("hike already exists and is not an object.");
-if (!hike.map) hike.map = {};
-else if (typeof hike.map != object)
+} 
+if (!hike.map) { hike.map = {}; }
+else if (typeof hike.map != object) {
     throw new Error("hike.map already exists and is not an object.");
+}
 
 hike.DEBUG = true;
 
@@ -22,8 +24,8 @@ hike.DEBUG = true;
  * @param {String} logmsg Message to log
  */
 hike.log = function(logmsg) {
-    if (hike.DEBUG) console.log(logmsg)
-}
+    if (hike.DEBUG) { console.log(logmsg); }
+};
 
 /**
  * All map operations are collected here. Invoke a map using the following syntax:
@@ -36,8 +38,8 @@ hike.log = function(logmsg) {
  * @param {Number} interval Interval in which to update the track in miliseconds.
  */
 hike.map = function() {
-    var points = new Array();
-    var markers = new Array();
+    var points = [];
+    var markers = [];
 
     var itinerary;
     var active = false;
@@ -61,7 +63,7 @@ hike.map = function() {
             zoom: 'small',
             map_type: false,
             overview: false,
-            scale: true,
+            scale: true
         });
     }
     }
@@ -71,7 +73,7 @@ hike.map = function() {
      */
     get_points = function get_points() {
     var url = '/hitchhiking/points/';
-    if (itinerary) url = url + itinerary + '/';
+    if (itinerary) { url = url + itinerary + '/'; }
     
     // If its an archive itinerary, make a GET request
     // otherwise make a POST request and send the last point.
@@ -96,7 +98,7 @@ hike.map = function() {
             render_track();
         });
     }
-    } 
+    };
     /**
      * Render the itinerary as a polyline.
      */
@@ -112,9 +114,9 @@ hike.map = function() {
     }
     
     // Evaluate all arguments of hike.map()
-    if (arguments[0]) itinerary = parseInt(arguments[0]);
-    if (arguments[1]) active = true;
-    if (arguments[2]) interval = arguments[2];
+    if (arguments[0]) { itinerary = parseInt(arguments[0], 10); }
+    if (arguments[1]) { active = true; }
+    if (arguments[2]) { interval = arguments[2]; }
     
     init();
     if (! active) { get_points(); }
