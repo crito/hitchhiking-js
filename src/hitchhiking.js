@@ -32,6 +32,13 @@ hike.log = function(logmsg) {
  * $(document).ready(function () {
  *    hike.map();
  *    //hike.map(16, 'active', 2000);
+ *    // Use reasonable defaults
+ *    //hike.map(16); 
+ *    Defaults = active=false
+ *               interval=3000
+ *               autotrack=true
+ *    hike.map.autotrack = false;
+ *    hike.map.interval = 
  * }
  * @param {Number} itinerary ID of the itinerary to load. If not specified, the active itinerary is used.
  * @param {String} active If set itinerary is active, and map is rendered every  given interval.
@@ -40,11 +47,18 @@ hike.log = function(logmsg) {
 hike.map = function() {
     var points = [];
     var markers = [];
-
     var itinerary;
+
     var active = false;
     var interval = 30000;
+    var autotrack = true;
     
+    var track_conf = [
+        ["width": 3,
+        "color": "#CC0000",
+        "opacity": 0.7]
+    ];
+
     var lat = 52.368892;
     var lon = 4.888916;
     
@@ -110,7 +124,9 @@ hike.map = function() {
 		track.setOpacity(0.5);
         map.addPolyline(track);
         //map.setCenterAndZoom(new mxn.LatLonPoint(points[0].lat,points[0].lon), 14);
-        map.autoCenterAndZoom();
+        if (autotrack) {
+            map.autoCenterAndZoom();
+        }
     }
     
     // Evaluate all arguments of hike.map()
